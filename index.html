@@ -177,6 +177,10 @@
       <option value="inductor">Inductor</option>
       <option value="switch">Switch</option>
       <option value="bulb">Bulb / Load</option>
+      <option value="ammeter">Ammeter</option>
+      <option value="voltmeter">Voltmeter</option>
+      <option value="galvanometer">Galvanometer</option>
+      <option value="current_arrow">Current Direction Arrow</option>
       <option value="junction">Connector Dot / Junction</option>
       <option value="plus">Positive +</option>
       <option value="minus">Negative −</option>
@@ -359,7 +363,7 @@
   }
 
   function terminalLocalPositions(type) {
-    if (["battery", "dc", "resistor", "capacitor", "inductor", "switch", "bulb"].includes(type)) {
+    if (["battery", "dc", "resistor", "capacitor", "inductor", "switch", "bulb", "ammeter", "voltmeter", "galvanometer"].includes(type)) {
       return [{ x: -70, y: 0 }, { x: 70, y: 0 }];
     }
 
@@ -551,6 +555,10 @@
     if (item.type === "inductor") drawInductor(item, g, c);
     if (item.type === "switch") drawSwitch(item, g, c);
     if (item.type === "bulb") drawBulb(item, g, c);
+    if (item.type === "ammeter") drawMeter(item, g, c, "A", "Ammeter");
+    if (item.type === "voltmeter") drawMeter(item, g, c, "V", "Voltmeter");
+    if (item.type === "galvanometer") drawMeter(item, g, c, "G", "Galvanometer");
+    if (item.type === "current_arrow") drawCurrentArrow(item, g, c);
     if (item.type === "junction") drawJunction(item, g, c);
     if (item.type === "plus") drawSign(item, g, "+");
     if (item.type === "minus") drawSign(item, g, "−");
@@ -636,6 +644,58 @@
     addText(g, item.text || "Load", 0, 58, c, 16);
   }
 
+  function drawMeter(item, g, c, symbol, defaultName) {
+    g.appendChild(makeEl("line", {
+      x1: -70,
+      y1: 0,
+      x2: -38,
+      y2: 0,
+      stroke: c,
+      "stroke-width": 4
+    }));
+
+    g.appendChild(makeEl("line", {
+      x1: 38,
+      y1: 0,
+      x2: 70,
+      y2: 0,
+      stroke: c,
+      "stroke-width": 4
+    }));
+
+    g.appendChild(makeEl("circle", {
+      cx: 0,
+      cy: 0,
+      r: 38,
+      fill: "#ffffff",
+      stroke: c,
+      "stroke-width": 4
+    }));
+
+    addText(g, symbol, 0, 10, c, 36);
+    addText(g, item.text || defaultName, 0, 62, c, 15);
+  }
+
+  function drawCurrentArrow(item, g, c) {
+    g.appendChild(makeEl("line", {
+      x1: -55,
+      y1: 0,
+      x2: 45,
+      y2: 0,
+      stroke: "#dc2626",
+      "stroke-width": 6,
+      "stroke-linecap": "round"
+    }));
+
+    g.appendChild(makeEl("polygon", {
+      points: "45,-16 75,0 45,16",
+      fill: "#dc2626"
+    }));
+
+    addText(g, item.text || "I", 0, -18, "#dc2626", 22);
+  }
+
+
   function drawJunction(item, g, c) {
     g.appendChild(makeEl("circle", { cx: 0, cy: 0, r: 12, fill: c, stroke: "#ffffff", "stroke-width": 3 }));
     addText(g, item.text || "", 0, 38, c, 14);
@@ -714,6 +774,10 @@
     if (type === "inductor") text = "L";
     if (type === "switch") text = "Switch";
     if (type === "bulb") text = "Load";
+    if (type === "ammeter") text = "Ammeter";
+    if (type === "voltmeter") text = "Voltmeter";
+    if (type === "galvanometer") text = "Galvanometer";
+    if (type === "current_arrow") text = "I";
     if (type === "junction") text = "";
     if (type === "label") text = "Label";
     if (type === "leveltag") text = levels[currentLevel].name;
