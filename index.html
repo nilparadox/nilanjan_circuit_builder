@@ -644,6 +644,7 @@
     addText(g, item.text || "Load", 0, 58, c, 16);
   }
 
+
   function drawMeter(item, g, c, symbol, defaultName) {
     g.appendChild(makeEl("line", {
       x1: -70,
@@ -672,15 +673,15 @@
       "stroke-width": 4
     }));
 
-    addText(g, symbol, 0, 10, c, 36);
-    addText(g, item.text || defaultName, 0, 62, c, 15);
+    addText(g, symbol, 0, 11, c, 36);
+    addText(g, item.text || defaultName, 0, 64, c, 15);
   }
 
   function drawCurrentArrow(item, g, c) {
     g.appendChild(makeEl("line", {
       x1: -55,
       y1: 0,
-      x2: 45,
+      x2: 42,
       y2: 0,
       stroke: "#dc2626",
       "stroke-width": 6,
@@ -688,13 +689,12 @@
     }));
 
     g.appendChild(makeEl("polygon", {
-      points: "45,-16 75,0 45,16",
+      points: "42,-16 75,0 42,16",
       fill: "#dc2626"
     }));
 
     addText(g, item.text || "I", 0, -18, "#dc2626", 22);
   }
-
 
   function drawJunction(item, g, c) {
     g.appendChild(makeEl("circle", { cx: 0, cy: 0, r: 12, fill: c, stroke: "#ffffff", "stroke-width": 3 }));
