@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Circuit Builder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(135deg, #020617, #1e293b, #0f172a);
+      color: #111827;
+    }
+
+    header {
+      text-align: center;
+      color: white;
+      padding: 22px 12px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 32px;
+    }
+
+    header p {
+      color: #cbd5e1;
+      margin: 8px 0 0;
+      font-size: 15px;
+    }
+
+    .main {
+      max-width: 1350px;
+      margin: 0 auto;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 16px;
+    }
+
+    .panel, .canvas-card {
+      background: white;
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 18px 45px rgba(0,0,0,0.28);
+    }
+
+    label {
+      display: block;
+      margin-top: 12px;
+      margin-bottom: 6px;
+      font-weight: 700;
+      color: #1f2937;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      font-size: 14px;
+    }
+
+    button {
+      margin-top: 9px;
+      border: none;
+      color: white;
+      background: #2563eb;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover { background: #1d4ed8; }
+
+    .green { background: #059669; }
+    .green:hover { background: #047857; }
+
+    .red { background: #dc2626; }
+    .red:hover { background: #b91c1c; }
+
+    .dark { background: #374151; }
+    .dark:hover { background: #1f2937; }
+
+    .purple { background: #7c3aed; }
+    .purple:hover { background: #6d28d9; }
+
+    .orange { background: #ea580c; }
+    .orange:hover { background: #c2410c; }
+
+    .small-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .hint {
+      font-size: 13px;
+      color: #6b7280;
+      line-height: 1.45;
+      margin-top: 10px;
+    }
+
+    .status {
+      margin-top: 10px;
+      font-weight: 700;
+      color: #374151;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .canvas-card {
+      min-height: 690px;
+      overflow: auto;
+    }
+
+    #stageWrap {
+      min-width: 780px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    #stage {
+      width: 950px;
+      height: 640px;
+      border: 2px solid #111827;
+      border-radius: 14px;
+      background: #f8fafc;
+      touch-action: none;
+      overflow: hidden;
+      cursor: crosshair;
+    }
+
+    footer {
+      color: #cbd5e1;
+      text-align: center;
+      padding: 20px;
+      font-size: 14px;
+    }
+
+    @media (max-width: 900px) {
+      .main {
+        grid-template-columns: 1fr;
+      }
+
+      .canvas-card {
+        padding: 10px;
+      }
+
+      #stage {
+        width: 900px;
+        height: 610px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>Circuit Builder</h1>
+  <p>Build simple electric circuits with battery, resistor, capacitor, inductor, switch, wires, labels, and level tags.</p>
+</header>
+
+<div class="main">
+
+  <div class="panel">
+    <label>Level</label>
+    <select id="levelSelect" onchange="switchLevel()"></select>
+
+    <div class="small-row">
+      <button class="purple" onclick="addLevel()">Add Level</button>
+      <button class="red" onclick="deleteLevel()">Delete Level</button>
+    </div>
+
+    <label>Tool</label>
+    <select id="toolSelect">
+      <option value="select">Select / Move</option>
+      <option value="wire">Wire / Connector</option>
+      <option value="battery">Battery / Cell</option>
+      <option value="dc">DC Supply</option>
+      <option value="resistor">Resistor</option>
+      <option value="capacitor">Capacitor</option>
+      <option value="inductor">Inductor</option>
+      <option value="switch">Switch</option>
+      <option value="bulb">Bulb / Load</option>
+      <option value="plus">Positive +</option>
+      <option value="minus">Negative −</option>
+      <option value="label">Text Label</option>
+      <option value="leveltag">Level Tag</option>
+      <option value="free">Free Draw</option>
+    </select>
+
+    <label>Selected Text / Value</label>
+    <input id="textInput" placeholder="Select label/component first" oninput="updateText()" />
+
+    <label>Color</label>
+    <input type="color" id="colorInput" value="#111827" onchange="updateColor()" />
+
+    <div class="small-row">
+      <button class="dark" onclick="rotateSelected()">Rotate 90°</button>
+      <button class="red" onclick="deleteSelected()">Delete</button>
+    </div>
+
+    <div class="small-row">
+      <button class="orange" onclick="undo()">Undo</button>
+      <button class="red" onclick="clearLevel()">Clear Level</button>
+    </div>
+
+    <button class="green" onclick="downloadPNG()">Download PNG</button>
+    <button class="green" onclick="saveProject()">Save JSON</button>
+
+    <label>Load JSON</label>
+    <input type="file" accept=".json,application/json" onchange="loadProject(event)" />
+
+    <div class="hint">
+      <b>How to use:</b><br>
+      1. Select a component and click canvas.<br>
+      2. For wire/arrow-like connector, click start point then end point.<br>
+      3. Drag components to move.<br>
+      4. Select component and rotate/delete/edit text.<br>
+      5. Use levels for Level 1, Level 2, etc.<br>
+      6. Export final circuit as PNG.
+    </div>
+
+    <div class="status" id="statusText">Ready</div>
+  </div>
+
+  <div class="canvas-card">
+    <div id="stageWrap">
+      <svg id="stage" viewBox="0 0 950 640" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Static GitHub Pages circuit diagram builder
+</footer>
+
+<script>
+  const svg = document.getElementById("stage");
+  const W = 950;
+  const H = 640;
+  const grid = 20;
+
+  let levels = [{ name: "Level 1", items: [] }];
+  let currentLevel = 0;
+  let selectedId = null;
+  let pendingWire = null;
+  let freeDrawing = false;
+  let currentStroke = [];
+  let dragging = false;
+  let dragOffset = { x: 0, y: 0 };
+  let dragMode = "";
+  let history = [];
+
+  function uid() {
+    return Date.now() + "_" + Math.floor(Math.random() * 100000);
+  }
+
+  function itemList() {
+    return levels[currentLevel].items;
+  }
+
+  function snap(v) {
+    return Math.round(v / grid) * grid;
+  }
+
+  function makeEl(tag, attrs = {}) {
+    const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (const k in attrs) node.setAttribute(k, attrs[k]);
+    return node;
+  }
+
+  function getPointer(evt) {
+    const rect = svg.getBoundingClientRect();
+    return {
+      x: snap(((evt.clientX - rect.left) / rect.width) * W),
+      y: snap(((evt.clientY - rect.top) / rect.height) * H)
+    };
+  }
+
+  function pushHistory() {
+    history.push(JSON.stringify(levels));
+    if (history.length > 50) history.shift();
+  }
+
+  function undo() {
+    if (history.length === 0) return;
+    levels = JSON.parse(history.pop());
+    selectedId = null;
+    pendingWire = null;
+    refreshLevels();
+    draw();
+  }
+
+  function refreshLevels() {
+    const select = document.getElementById("levelSelect");
+    select.innerHTML = "";
+    levels.forEach((lvl, i) => {
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.textContent = lvl.name;
+      select.appendChild(opt);
+    });
+    select.value = currentLevel;
+  }
+
+  function switchLevel() {
+    currentLevel = Number(document.getElementById("levelSelect").value);
+    selectedId = null;
+    pendingWire = null;
+    document.getElementById("textInput").value = "";
+    draw();
+  }
+
+  function addLevel() {
+    pushHistory();
+    levels.push({ name: "Level " + (levels.length + 1), items: [] });
+    currentLevel = levels.length - 1;
+    refreshLevels();
+    draw();
+  }
+
+  function deleteLevel() {
+    if (levels.length === 1) {
+      alert("At least one level is required.");
+      return;
+    }
+    pushHistory();
+    levels.splice(currentLevel, 1);
+    currentLevel = Math.max(0, currentLevel - 1);
+    selectedId = null;
+    refreshLevels();
+    draw();
+  }
+
+  function defineMarkers() {
+    const defs = makeEl("defs");
+
+    const arrow = makeEl("marker", {
+      id: "wireDot",
+      viewBox: "0 0 10 10",
+      refX: "5",
+      refY: "5",
+      markerWidth: "4",
+      markerHeight: "4"
+    });
+
+    arrow.appendChild(makeEl("circle", {
+      cx: 5,
+      cy: 5,
+      r: 3,
+      fill: "#111827"
+    }));
+
+    defs.appendChild(arrow);
+    svg.appendChild(defs);
+  }
+
+  function drawGrid() {
+    svg.appendChild(makeEl("rect", {
+      x: 0,
+      y: 0,
+      width: W,
+      height: H,
+      fill: "#f8fafc"
+    }));
+
+    for (let x = 0; x <= W; x += grid) {
+      svg.appendChild(makeEl("line", {
+        x1: x,
+        y1: 0,
+        x2: x,
+        y2: H,
+        stroke: x % 100 === 0 ? "#cbd5e1" : "#e2e8f0",
+        "stroke-width": x % 100 === 0 ? 1.2 : 0.7
+      }));
+    }
+
+    for (let y = 0; y <= H; y += grid) {
+      svg.appendChild(makeEl("line", {
+        x1: 0,
+        y1: y,
+        x2: W,
+        y2: y,
+        stroke: y % 100 === 0 ? "#cbd5e1" : "#e2e8f0",
+        "stroke-width": y % 100 === 0 ? 1.2 : 0.7
+      }));
+    }
+  }
+
+  function groupFor(item) {
+    const g = makeEl("g", {
+      "data-id": item.id,
+      transform: `translate(${item.x || 0}, ${item.y || 0}) rotate(${item.r || 0})`,
+      style: "cursor: move;"
+    });
+
+    g.addEventListener("pointerdown", function(evt) {
+      evt.stopPropagation();
+      selectItem(item.id);
+      const p = getPointer(evt);
+      dragOffset.x = p.x - (item.x || 0);
+      dragOffset.y = p.y - (item.y || 0);
+      dragMode = "item";
+      pushHistory();
+      dragging = true;
+    });
+
+    return g;
+  }
+
+  function drawSelection(item) {
+    if (item.id !== selectedId) return;
+    svg.appendChild(makeEl("rect", {
+      x: (item.x || 0) - 55,
+      y: (item.y || 0) - 35,
+      width: 110,
+      height: 70,
+      fill: "none",
+      stroke: "#7c3aed",
+      "stroke-width": 2,
+      "stroke-dasharray": "6 4"
+    }));
+  }
+
+  function drawWire(item, selected) {
+    const color = selected ? "#7c3aed" : item.color;
+
+    const g = makeEl("g", {
+      "data-id": item.id,
+      style: "cursor: move;"
+    });
+
+    g.appendChild(makeEl("polyline", {
+      points: `${item.x1},${item.y1} ${item.x2},${item.y2}`,
+      fill: "none",
+      stroke: color,
+      "stroke-width": selected ? 5 : 4,
+      "stroke-linecap": "round",
+      "marker-start": "url(#wireDot)",
+      "marker-end": "url(#wireDot)"
+    }));
+
+    g.appendChild(makeEl("circle", {
+      cx: item.x1,
+      cy: item.y1,
+      r: selected ? 8 : 5,
+      fill: color
+    }));
+
+    g.appendChild(makeEl("circle", {
+      cx: item.x2,
+      cy: item.y2,
+      r: selected ? 8 : 5,
+      fill: color
+    }));
+
+    g.addEventListener("pointerdown", function(evt) {
+      evt.stopPropagation();
+      selectItem(item.id);
+      const p = getPointer(evt);
+      const d1 = Math.hypot(p.x - item.x1, p.y - item.y1);
+      const d2 = Math.hypot(p.x - item.x2, p.y - item.y2);
+
+      if (d1 < d2 && d1 < 30) dragMode = "wireStart";
+      else if (d2 < 30) dragMode = "wireEnd";
+      else dragMode = "wireWhole";
+
+      dragOffset.x = p.x;
+      dragOffset.y = p.y;
+      pushHistory();
+      dragging = true;
+    });
+
+    svg.appendChild(g);
+  }
+
+  function addText(g, text, x, y, color, size = 18) {
+    const t = makeEl("text", {
+      x,
+      y,
+      "text-anchor": "middle",
+      fill: color,
+      "font-size": size,
+      "font-weight": "bold"
+    });
+    t.textContent = text || "";
+    g.appendChild(t);
+  }
+
+  function drawBattery(item, g) {
+    const c = item.color;
+    g.appendChild(makeEl("line", { x1: -50, y1: 0, x2: -18, y2: 0, stroke: c, "stroke-width": 4 }));
+    g.appendChild(makeEl("line", { x1: 18, y1: 0, x2: 50, y2: 0, stroke: c, "stroke-width": 4 }));
+    g.appendChild(makeEl("line", { x1: -18, y1: -26, x2: -18, y2: 26, stroke: c, "stroke-width": 4 }));
+    g.appendChild(makeEl("line", { x1: 10, y1: -16, x2: 10, y2: 16, stroke: c, "stroke-width": 4 }));
+    addText(g, "+", -26, -30, "#dc2626", 22);
+    addText(g, "−", 22, -30, "#2563eb", 22);
+    addText(g, item.text || "Battery", 0, 48, c, 16);
+  }
+
+  function drawDC(item, g) {
+    const c = item.color;
+    g.appendChild(makeEl("circle", { cx: 0, cy: 0, r: 30, fill: "#ffffff", stroke: c, "stroke-width": 4 }));
+    addText(g, "+", -10, -3, "#dc2626", 20);
+    addText(g, "−", 14, -3, "#2563eb", 20);
+    g.appendChild(makeEl("line", { x1: -60, y1: 0, x2: -30, y2: 0, stroke: c, "stroke-width": 4 }));
+    g.appendChild(makeEl("line", { x1: 30, y1: 0, x2: 60, y2: 0, stroke: c, "stroke-width": 4 }));
+    addText(g, item.text || "DC", 0, 55, c, 16);
+  }
+
+  function drawResistor(item, g) {
+    const c = item.color;
+    g.appendChild(makeEl("line", { x1: -60, y1: 0, x2: -35, y2: 0, stroke: c, "stroke-width": 4 }));
+
+    const pts = "-35,0 -25,-18 -10,18 5,-18 20,18 35,-18 45,0";
+    g.appendChild(makeEl("polyline", {
+      points: pts,
+      fill: "none",
+      stroke: c,
+      "stroke-width": 4,
+      "stroke-linejoin": "round",
+      "stroke-linecap": "round"
+    }));
+
+    g.appendChild(makeEl("line", { x1: 45, y1: 0, x2: 60, y2: 0, stroke: c, "stroke-width": 4 }));
+    addText(g, item.text || "R", 0, 48, c, 16);
+  }
+
+  function drawCapacitor(item, g) {
+    const c = item.color;
+    g.appendChild(makeEl("line", { x1: -55, y1: 0, x2: -12, y2: 0, stroke: c, "stroke-width": 4 }));
+    g.appendChild(makeEl("line", { x1: 12, y1: 0, x2: 55, y2: 0, stroke: c, "stroke-width": 4 }));
+    g.appendChild(makeEl("line", { x1: -12, y1: -30, x2: -12, y2: 30, stroke: c, "stroke-width": 4 }));
+    g.appendChild(makeEl("line", { x1: 12, y1: -30, x2: 12, y2: 30, stroke: c, "stroke-width": 4 }));
+    addText(g, item.text || "C", 0, 52, c, 16);
+  }
+
+  function drawInductor(item, g) {
+    const c = item.color;
+    g.appendChild(makeEl("line", { x1: -60, y1: 0, x2: -40, y2: 0, stroke: c, "stroke-width": 4 }));
+
+    for (let i = 0; i < 4; i++) {
+      g.appendChild(makeEl("path", {
+        d: `M ${-40 + i * 20} 0 A 10 10 0 0 1 ${-20 + i * 20} 0`,
+        fill: "none",
+        stroke: c,
+        "stroke-width": 4
+      }));
+    }
+
+    g.appendChild(makeEl("line", { x1: 40, y1: 0, x2: 60, y2: 0, stroke: c, "stroke-width": 4 }));
+    addText(g, item.text || "L", 0, 48, c, 16);
+  }
+
+  function drawSwitch(item, g) {
+    const c = item.color;
+    g.appendChild(makeEl("line", { x1: -60, y1: 0, x2: -25, y2: 0, stroke: c, "stroke-width": 4 }));
+    g.appendChild(makeEl("circle", { cx: -25, cy: 0, r: 5, fill: c }));
+    g.appendChild(makeEl("line", { x1: -20, y1: -5, x2: 25, y2: -28, stroke: c, "stroke-width": 4, "stroke-linecap": "round" }));
+    g.appendChild(makeEl("circle", { cx: 28, cy: 0, r: 5, fill: c }));
+    g.appendChild(makeEl("line", { x1: 28, y1: 0, x2: 60, y2: 0, stroke: c, "stroke-width": 4 }));
+    addText(g, item.text || "Switch", 0, 48, c, 16);
+  }
+
+  function drawBulb(item, g) {
+    const c = item.color;
+    g.appendChild(makeEl("line", { x1: -60, y1: 0, x2: -32, y2: 0, stroke: c, "stroke-width": 4 }));
+    g.appendChild(makeEl("line", { x1: 32, y1: 0, x2: 60, y2: 0, stroke: c, "stroke-width": 4 }));
+    g.appendChild(makeEl("circle", { cx: 0, cy: 0, r: 32, fill: "#ffffff", stroke: c, "stroke-width": 4 }));
+    g.appendChild(makeEl("line", { x1: -18, y1: -18, x2: 18, y2: 18, stroke: c, "stroke-width": 3 }));
+    g.appendChild(makeEl("line", { x1: 18, y1: -18, x2: -18, y2: 18, stroke: c, "stroke-width": 3 }));
+    addText(g, item.text || "Load", 0, 55, c, 16);
+  }
+
+  function drawTextItem(item, g) {
+    const c = item.color;
+    const text = item.text || "Label";
+    const boxW = Math.max(70, text.length * 9 + 24);
+    g.appendChild(makeEl("rect", {
+      x: -boxW / 2,
+      y: -20,
+      width: boxW,
+      height: 34,
+      rx: 8,
+      fill: "#ffffff",
+      stroke: c,
+      "stroke-width": 2
+    }));
+    addText(g, text, 0, 3, c, 16);
+  }
+
+  function drawSign(item, g, sign) {
+    const fill = sign === "+" ? "#dc2626" : "#2563eb";
+    g.appendChild(makeEl("circle", {
+      cx: 0,
+      cy: 0,
+      r: 22,
+      fill: "#ffffff",
+      stroke: fill,
+      "stroke-width": 3
+    }));
+    addText(g, sign, 0, 8, fill, 30);
+  }
+
+  function drawFree(item, selected) {
+    const color = selected ? "#7c3aed" : item.color;
+    svg.appendChild(makeEl("polyline", {
+      points: item.points.map(p => `${p.x},${p.y}`).join(" "),
+      fill: "none",
+      stroke: color,
+      "stroke-width": selected ? 5 : 4,
+      "stroke-linecap": "round",
+      "stroke-linejoin": "round"
+    }));
+  }
+
+  function drawItems() {
+    itemList().forEach(item => {
+      const selected = item.id === selectedId;
+
+      if (item.type === "wire") {
+        drawWire(item, selected);
+        return;
+      }
+
+      if (item.type === "free") {
+        drawFree(item, selected);
+        return;
+      }
+
+      drawSelection(item);
+
+      const g = groupFor(item);
+
+      if (item.type === "battery") drawBattery(item, g);
+      if (item.type === "dc") drawDC(item, g);
+      if (item.type === "resistor") drawResistor(item, g);
+      if (item.type === "capacitor") drawCapacitor(item, g);
+      if (item.type === "inductor") drawInductor(item, g);
+      if (item.type === "switch") drawSwitch(item, g);
+      if (item.type === "bulb") drawBulb(item, g);
+      if (item.type === "plus") drawSign(item, g, "+");
+      if (item.type === "minus") drawSign(item, g, "−");
+      if (item.type === "label") drawTextItem(item, g);
+      if (item.type === "leveltag") drawTextItem(item, g);
+
+      svg.appendChild(g);
+    });
+
+    if (pendingWire) {
+      svg.appendChild(makeEl("line", {
+        x1: pendingWire.x1,
+        y1: pendingWire.y1,
+        x2: pendingWire.x2,
+        y2: pendingWire.y2,
+        stroke: "#7c3aed",
+        "stroke-width": 4,
+        "stroke-dasharray": "8 6"
+      }));
+    }
+
+    if (currentStroke.length > 1) {
+      svg.appendChild(makeEl("polyline", {
+        points: currentStroke.map(p => `${p.x},${p.y}`).join(" "),
+        fill: "none",
+        stroke: "#7c3aed",
+        "stroke-width": 4,
+        "stroke-linecap": "round",
+        "stroke-linejoin": "round"
+      }));
+    }
+  }
+
+  function draw() {
+    svg.innerHTML = "";
+    defineMarkers();
+    drawGrid();
+    drawItems();
+    refreshLevels();
+
+    const count = itemList().length;
+    document.getElementById("statusText").textContent =
+      `${levels[currentLevel].name} | Items: ${count} | Selected: ${selectedId ? "Yes" : "No"}`;
+  }
+
+  function selectItem(id) {
+    selectedId = id;
+    const item = itemList().find(x => x.id === id);
+    if (!item) return;
+
+    document.getElementById("textInput").value = item.text || "";
+    document.getElementById("colorInput").value = item.color || "#111827";
+    draw();
+  }
+
+  function placeComponent(type, p) {
+    const color = document.getElementById("colorInput").value;
+    let text = "";
+
+    if (type === "battery") text = "Battery";
+    if (type === "dc") text = "DC";
+    if (type === "resistor") text = "R";
+    if (type === "capacitor") text = "C";
+    if (type === "inductor") text = "L";
+    if (type === "switch") text = "Switch";
+    if (type === "bulb") text = "Load";
+    if (type === "label") text = "Label";
+    if (type === "leveltag") text = levels[currentLevel].name;
+
+    const item = {
+      id: uid(),
+      type,
+      x: p.x,
+      y: p.y,
+      r: 0,
+      text,
+      color
+    };
+
+    pushHistory();
+    itemList().push(item);
+    selectedId = item.id;
+    document.getElementById("textInput").value = text;
+    draw();
+  }
+
+  svg.addEventListener("pointerdown", function(evt) {
+    const p = getPointer(evt);
+    const tool = document.getElementById("toolSelect").value;
+    const color = document.getElementById("colorInput").value;
+
+    if (tool === "select") {
+      selectedId = null;
+      document.getElementById("textInput").value = "";
+      draw();
+      return;
+    }
+
+    if (tool === "wire") {
+      if (!pendingWire) {
+        pendingWire = { x1: p.x, y1: p.y, x2: p.x, y2: p.y, color };
+        draw();
+      } else {
+        pushHistory();
+        itemList().push({
+          id: uid(),
+          type: "wire",
+          x1: pendingWire.x1,
+          y1: pendingWire.y1,
+          x2: p.x,
+          y2: p.y,
+          color: pendingWire.color,
+          text: ""
+        });
+        pendingWire = null;
+        draw();
+      }
+      return;
+    }
+
+    if (tool === "free") {
+      pushHistory();
+      freeDrawing = true;
+      currentStroke = [p];
+      draw();
+      return;
+    }
+
+    placeComponent(tool, p);
+  });
+
+  svg.addEventListener("pointermove", function(evt) {
+    const p = getPointer(evt);
+
+    if (pendingWire) {
+      pendingWire.x2 = p.x;
+      pendingWire.y2 = p.y;
+      draw();
+      return;
+    }
+
+    if (freeDrawing) {
+      currentStroke.push(p);
+      draw();
+      return;
+    }
+
+    if (!dragging || !selectedId) return;
+
+    const item = itemList().find(x => x.id === selectedId);
+    if (!item) return;
+
+    if (item.type === "wire") {
+      if (dragMode === "wireStart") {
+        item.x1 = p.x;
+        item.y1 = p.y;
+      } else if (dragMode === "wireEnd") {
+        item.x2 = p.x;
+        item.y2 = p.y;
+      } else {
+        const dx = p.x - dragOffset.x;
+        const dy = p.y - dragOffset.y;
+        item.x1 += dx;
+        item.y1 += dy;
+        item.x2 += dx;
+        item.y2 += dy;
+        dragOffset.x = p.x;
+        dragOffset.y = p.y;
+      }
+    } else {
+      item.x = p.x - dragOffset.x;
+      item.y = p.y - dragOffset.y;
+    }
+
+    draw();
+  });
+
+  svg.addEventListener("pointerup", function() {
+    if (freeDrawing) {
+      if (currentStroke.length > 1) {
+        itemList().push({
+          id: uid(),
+          type: "free",
+          points: currentStroke,
+          color: document.getElementById("colorInput").value,
+          text: ""
+        });
+      }
+      currentStroke = [];
+      freeDrawing = false;
+      draw();
+    }
+
+    dragging = false;
+    dragMode = "";
+  });
+
+  svg.addEventListener("pointerleave", function() {
+    dragging = false;
+    dragMode = "";
+    if (freeDrawing) {
+      if (currentStroke.length > 1) {
+        itemList().push({
+          id: uid(),
+          type: "free",
+          points: currentStroke,
+          color: document.getElementById("colorInput").value,
+          text: ""
+        });
+      }
+      currentStroke = [];
+      freeDrawing = false;
+      draw();
+    }
+  });
+
+  function updateText() {
+    if (!selectedId) return;
+
+    const item = itemList().find(x => x.id === selectedId);
+    if (!item) return;
+
+    item.text = document.getElementById("textInput").value;
+    draw();
+  }
+
+  function updateColor() {
+    if (!selectedId) return;
+
+    const item = itemList().find(x => x.id === selectedId);
+    if (!item) return;
+
+    item.color = document.getElementById("colorInput").value;
+    draw();
+  }
+
+  function rotateSelected() {
+    if (!selectedId) {
+      alert("Select an item first.");
+      return;
+    }
+
+    const item = itemList().find(x => x.id === selectedId);
+    if (!item) return;
+
+    if (item.type === "wire" || item.type === "free") {
+      alert("Rotate is for components/labels only.");
+      return;
+    }
+
+    pushHistory();
+    item.r = ((item.r || 0) + 90) % 360;
+    draw();
+  }
+
+  function deleteSelected() {
+    if (!selectedId) {
+      alert("Select an item first.");
+      return;
+    }
+
+    pushHistory();
+    levels[currentLevel].items = itemList().filter(x => x.id !== selectedId);
+    selectedId = null;
+    document.getElementById("textInput").value = "";
+    draw();
+  }
+
+  function clearLevel() {
+    if (!confirm("Clear this level?")) return;
+
+    pushHistory();
+    levels[currentLevel].items = [];
+    selectedId = null;
+    pendingWire = null;
+    draw();
+  }
+
+  function downloadPNG() {
+    selectedId = null;
+    pendingWire = null;
+    draw();
+
+    const serializer = new XMLSerializer();
+    const source = serializer.serializeToString(svg);
+    const blob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement("canvas");
+      canvas.width = W * 2;
+      canvas.height = H * 2;
+
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      URL.revokeObjectURL(url);
+
+      const link = document.createElement("a");
+      link.href = canvas.toDataURL("image/png");
+      link.download = "circuit-" + levels[currentLevel].name.replaceAll(" ", "-").toLowerCase() + ".png";
+      link.click();
+    };
+
+    img.src = url;
+  }
+
+  function saveProject() {
+    const project = {
+      app: "Circuit Builder",
+      version: 1,
+      levels
+    };
+
+    const blob = new Blob([JSON.stringify(project, null, 2)], {
+      type: "application/json"
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "circuit-project.json";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function loadProject(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const project = JSON.parse(e.target.result);
+        levels = project.levels || [{ name: "Level 1", items: [] }];
+        currentLevel = 0;
+        selectedId = null;
+        pendingWire = null;
+        refreshLevels();
+        draw();
+      } catch (err) {
+        alert("Invalid JSON file.");
+      }
+    };
+
+    reader.readAsText(file);
+  }
+
+  refreshLevels();
+  draw();
+</script>
+
+</body>
+</html>
